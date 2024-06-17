@@ -25,7 +25,7 @@ public class Player : MonoBehaviour
             return;
         }
         float xDirec = Input.GetAxisRaw("Horizontal");
-        if ((xDirec < 0 && transform.position.x <= -7.7) || (xDirec > 0 && transform.position.x >= 7.7))
+        if ((xDirec < 0 && transform.position.x <= -13) || (xDirec > 0 && transform.position.x >= 13))
         {
             return;
         }
