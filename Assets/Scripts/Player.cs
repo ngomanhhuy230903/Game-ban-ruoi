@@ -7,55 +7,43 @@ public class Player : MonoBehaviour
     public float moveSpeed;
     public float upSpeed;
     public GameObject bullet;
+    public int bulletRemain = 0;
     public Transform bulletSpawn;
     private bool isSpawn = false;
-    private float shootTimer = 0f;
-    public float shootDelay = 0.5f; // Thời gian trễ giữa các lần bắn
-    GameController m_gc;
+    private ObjectPool bulletPool;
+    GameController gc;
     public AudioSource aus;
     public AudioClip shootingS;
      void Start()
     {
-        m_gc = FindObjectOfType<GameController>();
+        gc = FindObjectOfType<GameController>();
+        bulletPool = GameObject.Find("BulletPool").GetComponent<ObjectPool>();
     }
     void Update()
     {
-        if (m_gc.IsGameOver)
+        if (gc.IsGameOver)
         {
             return;
         }
         float xDirec = Input.GetAxisRaw("Horizontal");
-        if ((xDirec < 0 && transform.position.x <= -13) || (xDirec > 0 && transform.position.x >= 13))
+        if ((xDirec < 0 && transform.position.x <= -8.53) || (xDirec > 0 && transform.position.x >= 7.87))
         {
             return;
         }
         transform.position += Vector3.right * moveSpeed * Time.deltaTime * xDirec;
 
         float xDirecUp = Input.GetAxisRaw("Vertical");
-        if ((xDirecUp < 0 && transform.position.y <= -4.13) || (xDirecUp > 0 && transform.position.y >= 4.7))
+        if ((xDirecUp < 0 && transform.position.y <= -4.13) || (xDirecUp > 0 && transform.position.y >= 4.3))
         {
             return;
         }
         transform.position += Vector3.up * upSpeed * Time.deltaTime * xDirecUp;
 
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space) && bulletRemain > 0)
         {
-            isSpawn = true;
-        }
-        if (isSpawn)
-        {
-            shootTimer += Time.deltaTime;
-
-            if (shootTimer >= shootDelay)
-            {
-                Shoot();
-                shootTimer = 0f;
-            }
-
-            if (Input.GetKeyUp(KeyCode.Space))
-            {
-                isSpawn = false;
-            }
+            GameObject bullet = bulletPool.GetFromPool(transform.position, Quaternion.identity);
+            bullet.SetActive(true);
+            bulletRemain--;
         }
     }
 
@@ -67,7 +55,18 @@ public class Player : MonoBehaviour
             {
                 aus.PlayOneShot(shootingS);
             }
-            Instantiate(bullet, bulletSpawn.position, Quaternion.identity);
+            Vector2 bulletPosition = new Vector2(bulletSpawn.position.x, bulletSpawn.position.y);
+            GameObject obj;
+            if (bulletPool != null)
+            {
+                obj = bulletPool.GetFromPool(bulletPosition, Quaternion.identity);
+            }
+            else
+            {
+                obj = Instantiate(bullet, bulletPosition, Quaternion.identity);
+            }
+
+            obj.SetActive(true); // Đảm bảo object hiển thị nếu dùng object pool
         }
     }
  /*   private void OnTriggerEnter2D(Collider2D col)
@@ -75,7 +74,7 @@ public class Player : MonoBehaviour
         if (col.CompareTag("Enemy"))
         {
             Destroy(col.gameObject);
-            m_gc.IsGameOver = true;
+            gc.IsGameOver = true;
         }
     }*/
 }

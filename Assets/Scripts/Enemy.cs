@@ -5,31 +5,34 @@ using UnityEngine;
 public class Enemy : MonoBehaviour
 {
     public float moveSpeed;
-    Rigidbody2D m_rb;
-    GameController m_gc;
+    private ObjectPool enemyPool;
+    protected Rigidbody2D rb;
+    protected GameController gc;
     // Start is called before the first frame update
-    void Start()
+    public void Start()
     {
-        m_rb = GetComponent<Rigidbody2D>();
-        m_gc = FindObjectOfType<GameController>();
+        rb = GetComponent<Rigidbody2D>();
+        gc = FindObjectOfType<GameController>();
+        enemyPool = GameObject.Find("EnemyPool").GetComponent<ObjectPool>();
     }
 
     // Update is called once per frame
     void Update()
     {
-         m_rb.velocity = Vector3.down * moveSpeed;
+         rb.velocity = Vector3.down * moveSpeed;
     }
     private void OnTriggerEnter2D(Collider2D col)
     {
         if(col.CompareTag("Deathzone"))
                 {
-            Destroy(gameObject);
-            m_gc.IsGameOver = true;
+            enemyPool.ReturnToPool(gameObject);
+            //gc.IsGameOver = true;
+            gc.InceasePoint();
         }
         if (col.CompareTag("Player"))
         {
-            Destroy(gameObject);
-            m_gc.IsGameOver = true;
+            enemyPool.ReturnToPool(gameObject);
+            gc.IsGameOver = true;
         }
     }
 }

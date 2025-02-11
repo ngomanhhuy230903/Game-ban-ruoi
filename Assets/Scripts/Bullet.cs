@@ -5,45 +5,62 @@ using UnityEngine;
 public class Bullet : MonoBehaviour
 {
     public float speed;
-    Rigidbody2D m_rb;
-    GameController m_gc;
-    AudioSource aus;
+    private Rigidbody2D rb;
+    private GameController gc;
+    private AudioSource aus;
     public AudioClip hitS;
-    public GameObject hitVFX; // Prefab của hitVFX
-    private GameObject hitVFXDes; // Tham chiếu đến đối tượng hitVFX được tạo ra
+    private ObjectPool bulletPool;
+    private ObjectPool enemyPool;
+    private ObjectPool vfxPool;
 
     void Start()
     {
-        m_rb = GetComponent<Rigidbody2D>();
-        m_gc = FindObjectOfType<GameController>();
+        rb = GetComponent<Rigidbody2D>();
+        gc = FindObjectOfType<GameController>();
         aus = FindObjectOfType<AudioSource>();
+
+        bulletPool = GameObject.Find("BulletPool").GetComponent<ObjectPool>();
+        enemyPool = GameObject.Find("EnemyPool").GetComponent<ObjectPool>();
+        vfxPool = GameObject.Find("HitVFXPool").GetComponent<ObjectPool>();
     }
 
     void Update()
     {
-        m_rb.velocity = Vector2.up * speed;
+        rb.velocity = Vector2.up * speed;
     }
 
     private void OnTriggerEnter2D(Collider2D col)
     {
         if (col.CompareTag("Limit"))
         {
-            Destroy(gameObject);
+            bulletPool.ReturnToPool(gameObject); // Trả đạn về pool
+            return;
         }
+
         if (col.CompareTag("Enemy"))
         {
             if (aus && hitS)
             {
                 aus.PlayOneShot(hitS);
             }
-            if (hitVFX)
+
+            if (vfxPool != null)
             {
-                hitVFXDes = Instantiate(hitVFX, col.transform.position, Quaternion.identity);
-                Destroy(hitVFXDes, 1f);
+                GameObject vfx = vfxPool.GetFromPool(col.transform.position, Quaternion.identity);
+                StartCoroutine(ReturnVFXToPool(vfx, 1f)); // Trả VFX về pool sau 1s
             }
-            m_gc.InceasePoint();
-            Destroy(gameObject);
-            Destroy(col.gameObject);
+
+            gc.InceasePoint();
+
+            // Trả cả bullet và enemy về pool
+            bulletPool.ReturnToPool(gameObject);
+            enemyPool.ReturnToPool(col.gameObject);
         }
+    }
+
+    private IEnumerator ReturnVFXToPool(GameObject vfx, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        vfxPool.ReturnToPool(vfx);
     }
 }
